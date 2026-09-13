@@ -1,0 +1,129 @@
+<div class="ai-settings">
+  <h3>AI Panel</h3>
+  <p class="text-muted">An autonomous agent that can read and type into every open terminal tab. Sessions are saved under
+    <code>{{ store.rootDir }}</code> <a href="#" (click)="openDataFolder(); $event.preventDefault()">open</a>.</p>
+
+  <h4>Model endpoint</h4>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Endpoint</div>
+      <div class="description">Any OpenAI-compatible server: OpenRouter, LiteLLM, llama.cpp, vLLM, Ollama, LM Studio… Base URL or full <code>/v1/chat/completions</code> URL.</div>
+    </div>
+    <input type="text" class="form-control" placeholder="http://localhost:8080" [(ngModel)]="c.endpoint" (ngModelChange)="save()" />
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">API key</div>
+      <div class="description">Sent as a Bearer token. Leave empty for local servers.</div>
+    </div>
+    <input type="password" class="form-control" [(ngModel)]="c.apiKey" (ngModelChange)="save()" autocomplete="off" />
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Model</div>
+      <div class="description">Model id as the server expects it. Must support tool calling.</div>
+    </div>
+    <input type="text" class="form-control" list="ai-panel-models" placeholder="e.g. qwen3-32b, gpt-4.1, anthropic/claude-sonnet-4.5" [(ngModel)]="c.model" (ngModelChange)="save()" />
+    <datalist id="ai-panel-models">
+      <option *ngFor="let m of models" [value]="m"></option>
+    </datalist>
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Connection test</div>
+      <div class="description" *ngIf="testResult" [class.text-success]="testResult.ok" [class.text-danger]="!testResult.ok">{{ testResult.message }}</div>
+    </div>
+    <button class="btn btn-secondary" (click)="test()" [disabled]="testing || !c.endpoint">
+      <i class="fas" [class.fa-plug]="!testing" [class.fa-circle-notch]="testing" [class.fa-spin]="testing"></i> Test
+    </button>
+  </div>
+  <div class="form-line vertical">
+    <div class="header">
+      <div class="title">Extra request parameters (JSON)</div>
+      <div class="description">Merged into every request body, e.g. <code>{{ '{' }}"temperature": 0.2, "max_tokens": 4096{{ '}' }}</code> or provider-specific reasoning options.</div>
+      <div class="description text-danger" *ngIf="extraParamsError">{{ extraParamsError }}</div>
+    </div>
+    <textarea class="form-control" rows="3" [(ngModel)]="c.extraParamsText" (ngModelChange)="validateExtraParams(); save()" spellcheck="false"></textarea>
+  </div>
+  <div class="form-line vertical">
+    <div class="header">
+      <div class="title">Additional instructions</div>
+      <div class="description">Appended to the system prompt – your conventions, preferred tools, hosts to be careful with…</div>
+    </div>
+    <textarea class="form-control" rows="4" [(ngModel)]="c.additionalSystemPrompt" (ngModelChange)="save()"></textarea>
+  </div>
+
+  <h4>Safety</h4>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Default approval mode</div>
+      <div class="description">Each session can override this from the composer. Catastrophic patterns (rm -rf /, mkfs, …) always ask.</div>
+    </div>
+    <select class="form-control" [(ngModel)]="c.approvalMode" (ngModelChange)="save()">
+      <option value="ask">Ask for every action</option>
+      <option value="auto_low">Auto-approve low-risk (read-only) actions</option>
+      <option value="auto_medium">Auto-approve low and medium risk</option>
+      <option value="auto_all">Auto-approve everything</option>
+    </select>
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Command time budget</div>
+      <div class="description">Seconds to wait for a command before reporting back to the model (it can keep waiting).</div>
+    </div>
+    <input type="number" class="form-control" min="5" max="3600" [(ngModel)]="c.defaultCommandTimeout" (ngModelChange)="save()" />
+  </div>
+
+  <h4>Panel</h4>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Dock side</div>
+    </div>
+    <select class="form-control" [(ngModel)]="c.panelSide" (ngModelChange)="save()">
+      <option value="right">Right</option>
+      <option value="left">Left</option>
+    </select>
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Switch to the terminal the agent is working in</div>
+      <div class="description">Bring the tab into view when a command runs there (keyboard focus stays in the panel).</div>
+    </div>
+    <toggle [(ngModel)]="c.focusTerminalOnRun" (ngModelChange)="save()"></toggle>
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Show model reasoning</div>
+      <div class="description">Collapsible "Reasoning" section for models that stream their thinking.</div>
+    </div>
+    <toggle [(ngModel)]="c.showReasoning" (ngModelChange)="save()"></toggle>
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Name sessions automatically</div>
+      <div class="description">Use the first message as the session title (double-click the title to rename).</div>
+    </div>
+    <toggle [(ngModel)]="c.autoTitle" (ngModelChange)="save()"></toggle>
+  </div>
+
+  <h4>Context</h4>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Max characters of command output sent to the model</div>
+      <div class="description">Longer output is cut in the middle (head + tail). The full output stays visible in the panel.</div>
+    </div>
+    <input type="number" class="form-control" min="1000" step="1000" [(ngModel)]="c.maxToolResultChars" (ngModelChange)="save()" />
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Context budget (characters)</div>
+      <div class="description">Roughly 4 characters per token. Older command output is elided first, then older turns.</div>
+    </div>
+    <input type="number" class="form-control" min="8000" step="8000" [(ngModel)]="c.maxContextChars" (ngModelChange)="save()" />
+  </div>
+
+  <div class="form-line">
+    <div class="header"><div class="title">Reset</div></div>
+    <button class="btn btn-outline-danger btn-sm" (click)="resetDefaults()">Reset settings</button>
+  </div>
+</div>

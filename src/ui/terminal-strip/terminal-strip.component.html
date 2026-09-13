@@ -1,0 +1,25 @@
+<div class="strip" *ngIf="views.length">
+  <div class="chip-wrap" *ngFor="let v of views; trackBy: trackView">
+    <button type="button" class="chip"
+            [class.used]="v.used" [class.disconnected]="!v.entry" [class.active]="v.isActive"
+            [title]="statusTitle(v)"
+            (click)="click(v, $event)" (contextmenu)="openMenu(v, $event)">
+      <span class="dot" [ngClass]="v.status"></span>
+      <span class="key">{{ v.key }}</span>
+      <span class="label">{{ v.label }}</span>
+      <i class="fas fa-unlink" *ngIf="!v.entry"></i>
+    </button>
+
+    <div class="menu" *ngIf="menuFor === v.key" (click)="$event.stopPropagation()">
+      <div class="menu-title">{{ v.key }} · {{ v.connection }}</div>
+      <button type="button" *ngIf="!v.entry && v.canReconnect" (click)="reconnect(v)">
+        <i class="fas fa-plug"></i> Reconnect (open the profile again)
+      </button>
+      <div class="menu-section" *ngIf="candidates.length">Attach to an open terminal:</div>
+      <button type="button" *ngFor="let e of candidates" (click)="attach(v.key, e)">
+        <i class="fas fa-link"></i> {{ e.label }}
+      </button>
+      <div class="menu-empty" *ngIf="!candidates.length && !v.canReconnect">No open terminals to attach.</div>
+    </div>
+  </div>
+</div>

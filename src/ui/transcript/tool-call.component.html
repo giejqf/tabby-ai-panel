@@ -1,0 +1,75 @@
+<div class="tool-call" [class]="'tool-call status-' + statusClass" [class.pending]="isPending" [class.question]="call.name === 'ask_user'">
+
+  <div class="tc-header">
+    <i class="fas tc-icon" [ngClass]="icon"></i>
+    <span class="tc-title">{{ title }}</span>
+    <button class="tc-terminal-link" type="button" *ngIf="terminalOpen" (click)="focusTerminal()" title="Show this terminal">
+      <i class="fas fa-external-link-alt"></i>
+    </button>
+    <span class="badge-risk" *ngIf="call.riskLevel" [ngClass]="call.riskLevel">{{ call.riskLevel }}</span>
+    <span class="tc-status" [ngClass]="statusClass">
+      <i class="fas fa-circle-notch fa-spin" *ngIf="isRunning"></i>
+      {{ statusLabel }}
+    </span>
+  </div>
+
+  <pre class="tc-command" *ngIf="commandText">{{ commandText }}</pre>
+
+  <div class="tc-explanation" *ngIf="explanation && call.name !== 'ask_user'">{{ explanation }}</div>
+
+  <div class="tc-warning" *ngIf="hardBlocked">
+    <i class="fas fa-radiation"></i> {{ call.progress }}
+  </div>
+
+  <!-- approval -->
+  <div class="tc-actions" *ngIf="isPending">
+    <div class="approve-group">
+      <button class="ai-btn primary" type="button" (click)="approve()">
+        Approve <kbd *ngIf="hotkey('approve')">{{ hotkey('approve') }}</kbd>
+      </button>
+      <button class="ai-btn primary caret" type="button" (click)="showApproveMenu = !showApproveMenu" title="More options">
+        <i class="fas fa-caret-down"></i>
+      </button>
+      <div class="approve-menu" *ngIf="showApproveMenu">
+        <button type="button" (click)="approveAndAutoLow()">Approve, and auto-approve <b>low-risk</b> actions for this session</button>
+      </div>
+    </div>
+    <button class="ai-btn" type="button" (click)="deny()">
+      Deny <kbd *ngIf="hotkey('deny')">{{ hotkey('deny') }}</kbd>
+    </button>
+  </div>
+
+  <!-- ask_user -->
+  <div class="tc-question" *ngIf="call.name === 'ask_user'">
+    <div class="question-text">{{ call.question || call.args?.question }}</div>
+    <ng-container *ngIf="call.status === 'awaiting_user'">
+      <div class="choices" *ngIf="call.choices?.length">
+        <button class="ai-btn" type="button" *ngFor="let c of call.choices" (click)="answer(c)">{{ c }}</button>
+      </div>
+      <div class="answer-row">
+        <input class="ai-input" type="text" [(ngModel)]="answerDraft"
+               [placeholder]="call.choices?.length ? 'Or type another answer…' : 'Type your answer…'"
+               (keydown.enter)="answer()" />
+        <button class="ai-btn primary" type="button" [disabled]="!answerDraft.trim()" (click)="answer()">Send</button>
+      </div>
+    </ng-container>
+    <div class="answered" *ngIf="call.answer"><i class="fas fa-reply"></i> {{ call.answer }}</div>
+  </div>
+
+  <!-- output -->
+  <ng-container *ngIf="hasOutput && call.name !== 'ask_user'">
+    <button class="tc-output-toggle" type="button" (click)="toggleOutput()">
+      <i class="fas" [class.fa-chevron-right]="!showOutput" [class.fa-chevron-down]="showOutput"></i>
+      {{ isRunning ? 'Live output' : 'Output' }} · {{ outputLines }} {{ outputLines === 1 ? 'line' : 'lines' }}
+      <span class="truncated" *ngIf="call.truncatedForModel" title="The model received a shortened version">· shortened for the model</span>
+    </button>
+    <pre #outputBox class="tc-output" *ngIf="showOutput" [class.live]="isRunning">{{ outputText }}</pre>
+  </ng-container>
+
+  <div class="tc-footer" *ngIf="canInterrupt">
+    <span class="hint">The command may still be running in {{ call.terminalLabel }}.</span>
+    <button class="ai-btn small" type="button" (click)="interrupt()" title="Send Ctrl+C to this terminal"><i class="fas fa-ban"></i> Send Ctrl+C</button>
+  </div>
+
+  <div class="tc-error" *ngIf="call.status === 'error' && call.error">{{ call.error }}</div>
+</div>

@@ -1,0 +1,52 @@
+<div #scroller class="transcript" (scroll)="onScroll()" (click)="onClick($event)">
+
+  <div class="empty" *ngIf="!messages.length">
+    <div class="empty-icon"><i class="fas fa-terminal"></i></div>
+    <div class="empty-title">Ask for anything you'd do in these terminals</div>
+    <p class="empty-hint">
+      The agent can read and type into <b>every open tab</b>, including SSH sessions on different machines.
+      Mention a tab with <code>&#64;name</code>. Commands wait for your approval unless you allow them below.
+    </p>
+    <div class="empty-warning" *ngIf="!configured">
+      <i class="fas fa-plug"></i>
+      No LLM endpoint configured yet.
+      <button class="ai-btn small primary" type="button" (click)="openSettings.emit()">Open settings</button>
+    </div>
+    <div class="examples" *ngIf="configured">
+      <button class="example" type="button" *ngFor="let ex of examples" (click)="useExample(ex)">{{ ex }}</button>
+    </div>
+  </div>
+
+  <ng-container *ngFor="let m of messages; trackBy: trackMessage">
+
+    <div class="msg user" *ngIf="m.role === 'user'">
+      <div class="bubble">{{ m.content }}</div>
+    </div>
+
+    <div class="msg note" *ngIf="m.role === 'note'">
+      <i class="fas fa-info-circle"></i> <span>{{ m.content }}</span>
+    </div>
+
+    <div class="msg assistant" *ngIf="m.role === 'assistant'" [class.streaming]="isStreaming(m)">
+      <div class="reasoning" *ngIf="showReasoning && m.reasoning">
+        <button class="reasoning-toggle" type="button" (click)="toggleReasoning(m)">
+          <i class="fas" [class.fa-chevron-right]="!reasoningExpanded(m)" [class.fa-chevron-down]="reasoningExpanded(m)"></i>
+          Reasoning
+          <span class="spin" *ngIf="isStreaming(m) && !m.content"><i class="fas fa-circle-notch fa-spin"></i></span>
+        </button>
+        <pre class="reasoning-body" *ngIf="reasoningExpanded(m)">{{ m.reasoning }}</pre>
+      </div>
+
+      <div class="markdown" *ngIf="m.content" [innerHTML]="m.content | aiMarkdown"></div>
+      <div class="typing" *ngIf="isStreaming(m) && !m.content && !m.reasoning">
+        <span></span><span></span><span></span>
+      </div>
+
+      <ai-tool-call *ngFor="let call of m.toolCalls" [call]="call"></ai-tool-call>
+
+      <div class="marker interrupted" *ngIf="m.interrupted"><i class="fas fa-stop"></i> Stopped</div>
+      <div class="marker error" *ngIf="m.error"><i class="fas fa-exclamation-triangle"></i> {{ m.error }}</div>
+    </div>
+
+  </ng-container>
+</div>

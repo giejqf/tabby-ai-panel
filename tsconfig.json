@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "target": "es2019",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "removeComments": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "declaration": true,
+    "sourceMap": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": true,
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
+    "lib": ["DOM", "ES2021"],
+    "paths": {
+      "tabby-*": ["./node_modules/tabby-*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests", "tabby-ai-agent", "tabby-ai-assistant"],
+  "angularCompilerOptions": {
+    "strictTemplates": true,
+    "enableResourceInlining": true,
+    "strictInjectionParameters": true
+  }
+}

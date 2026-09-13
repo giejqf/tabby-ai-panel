@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.webpack-cache/
+.e2e/
+# reference projects dropped into the workspace (have their own git repos)
+tabby-ai-agent/
+tabby-ai-assistant/
+release/
+*.zip

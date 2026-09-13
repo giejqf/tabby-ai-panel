@@ -1,0 +1,35 @@
+<div class="composer">
+  <div class="mentions" *ngIf="mentionOptions.length">
+    <button type="button" *ngFor="let o of mentionOptions; let i = index" [class.selected]="i === mentionIndex"
+            (mousedown)="$event.preventDefault()" (click)="pickMention(o)">
+      <span class="m-key">{{ o.key }}</span>
+      <span class="m-label">{{ o.label }}</span>
+      <span class="m-conn">{{ o.connection }}</span>
+    </button>
+  </div>
+
+  <div class="input-row" [class.busy]="busy">
+    <textarea #textarea rows="1" [(ngModel)]="draft" (input)="onInput()" (keydown)="onKeydown($event)"
+              (blur)="closeMentions()"
+              [placeholder]="busy ? 'Agent is working… type the next message' : 'Ask the agent… @ mentions a terminal'"
+              spellcheck="false"></textarea>
+    <button class="send-btn" type="button" *ngIf="!busy" [disabled]="!canSend" (click)="send()" title="Send (Enter)">
+      <i class="fas fa-arrow-up"></i>
+    </button>
+    <button class="send-btn stop" type="button" *ngIf="busy" (click)="stop()" [title]="'Stop ' + stopHotkey">
+      <i class="fas fa-stop"></i>
+    </button>
+  </div>
+
+  <div class="footer">
+    <label class="approval" [title]="approvalHint">
+      <i class="fas fa-shield-alt"></i>
+      <select class="ai-select" [ngModel]="approvalMode" (ngModelChange)="setApprovalMode($event)">
+        <option *ngFor="let m of approvalModes" [value]="m.value">{{ m.label }}</option>
+      </select>
+    </label>
+    <span class="spacer"></span>
+    <span class="meta" *ngIf="tokenSummary">{{ tokenSummary }}</span>
+    <span class="meta model" [title]="'Model: ' + model">{{ model }}</span>
+  </div>
+</div>

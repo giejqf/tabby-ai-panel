@@ -1,0 +1,57 @@
+<div class="ai-panel" [class.side-left]="side === 'left'" [class.side-right]="side === 'right'">
+  <div class="resize-handle" (mousedown)="startResize($event)" title="Drag to resize"></div>
+
+  <header class="panel-header">
+    <button class="icon-btn" type="button" (click)="toggleSessions()" [class.active]="showSessions"
+            [title]="'Sessions (' + sessionCount + ')'">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="title-area" *ngIf="!editingTitle" (dblclick)="startEditTitle()" [title]="session.title + ' — double-click to rename'">
+      <span class="title">{{ session.title }}</span>
+      <span class="phase" *ngIf="phaseLabel"><i class="fas fa-circle-notch fa-spin"></i> {{ phaseLabel }}</span>
+    </div>
+    <input *ngIf="editingTitle" #titleInput class="title-input" type="text" [(ngModel)]="titleDraft"
+           (keydown.enter)="commitTitle()" (keydown.escape)="cancelEditTitle()" (blur)="commitTitle()" />
+
+    <div class="header-actions">
+      <button class="icon-btn" type="button" (click)="newSession()" [title]="'New session ' + hotkeyLabel('newSession')">
+        <i class="fas fa-plus"></i>
+      </button>
+      <button class="icon-btn" type="button" (click)="openSettings()" title="AI panel settings">
+        <i class="fas fa-cog"></i>
+      </button>
+      <button class="icon-btn" type="button" (click)="close()" [title]="'Close ' + hotkeyLabel('toggle')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </header>
+
+  <ai-terminal-strip></ai-terminal-strip>
+
+  <div class="panel-body">
+    <ai-transcript
+      [messages]="session.messages"
+      [phase]="state.phase"
+      [showReasoning]="showReasoning"
+      [configured]="configured"
+      (openSettings)="openSettings()">
+    </ai-transcript>
+
+    <ai-session-list *ngIf="showSessions"
+      [currentId]="session.id"
+      (open)="openSession($event)"
+      (create)="newSession()"
+      (close)="showSessions = false"
+      (openFolder)="openDataFolder()">
+    </ai-session-list>
+  </div>
+
+  <div class="error-bar" *ngIf="state.error">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span class="error-text">{{ state.error }}</span>
+    <button class="icon-btn" type="button" (click)="agent.clearError()" title="Dismiss"><i class="fas fa-times"></i></button>
+  </div>
+
+  <ai-composer></ai-composer>
+</div>

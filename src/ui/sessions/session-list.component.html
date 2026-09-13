@@ -1,0 +1,35 @@
+<div class="drawer">
+  <div class="drawer-header">
+    <input class="ai-input search" type="search" placeholder="Search sessions…" [(ngModel)]="query" autofocus />
+    <button class="ai-btn small primary" type="button" (click)="create.emit()"><i class="fas fa-plus"></i> New</button>
+    <button class="icon-btn" type="button" (click)="close.emit()" title="Close"><i class="fas fa-times"></i></button>
+  </div>
+
+  <div class="list">
+    <div class="empty" *ngIf="!filtered.length">
+      {{ sessions.length ? 'No sessions match.' : 'No saved sessions yet. Sessions are saved automatically as you chat.' }}
+    </div>
+
+    <div class="item" *ngFor="let s of filtered; trackBy: trackSession" [class.current]="s.id === currentId" (click)="open.emit(s.id)">
+      <div class="item-main">
+        <div class="item-title" *ngIf="renamingId !== s.id" (dblclick)="startRename(s, $event)">{{ s.title }}</div>
+        <input *ngIf="renamingId === s.id" class="ai-input rename" type="text" [(ngModel)]="renameDraft"
+               (click)="$event.stopPropagation()" (keydown.enter)="commitRename(s)" (keydown.escape)="renamingId = null" (blur)="commitRename(s)" />
+        <div class="item-preview" *ngIf="s.preview">{{ s.preview }}</div>
+        <div class="item-meta">
+          <span>{{ s.updatedAt | aiRelativeTime }}</span>
+          <span>· {{ s.messageCount }} msg</span>
+          <span class="labels" *ngIf="s.terminalLabels.length">· <i class="fas fa-terminal"></i> {{ s.terminalLabels.join(', ') }}</span>
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="icon-btn" type="button" (click)="startRename(s, $event)" title="Rename"><i class="fas fa-pen"></i></button>
+        <button class="icon-btn" type="button" (click)="remove(s, $event)" title="Delete"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-footer">
+    <button class="link" type="button" (click)="openFolder.emit()"><i class="fas fa-folder-open"></i> Open sessions folder</button>
+  </div>
+</div>
