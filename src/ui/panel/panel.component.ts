@@ -1,6 +1,6 @@
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Subscription } from 'rxjs'
-import { AppService, ConfigService, PlatformService } from 'tabby-core'
+import { AppService, ConfigService, HotkeysService, PlatformService } from 'tabby-core'
 import { SettingsTabComponent } from 'tabby-settings'
 import { AgentService, AgentState } from '../../core/agent.service'
 import { PanelHostService } from '../panel-host.service'
@@ -8,6 +8,9 @@ import { SessionStoreService } from '../../core/session-store.service'
 import { ComposerComponent } from '../composer/composer.component'
 import { CONFIG_KEY, DEFAULT_CONFIG, HOTKEY_IDS } from '../../types/config'
 import { Session } from '../../types/session'
+import { findHotkey } from '../../core/util/keystroke'
+
+const PANEL_HOTKEY_IDS = Object.values(HOTKEY_IDS)
 
 @Component({
     selector: 'ai-panel',
@@ -25,6 +28,7 @@ export class AiPanelComponent implements OnInit, OnDestroy {
 
     private sub = new Subscription()
     private dragging = false
+    private hotkeysSuspended = false
 
     constructor (
         public agent: AgentService,
@@ -33,6 +37,8 @@ export class AiPanelComponent implements OnInit, OnDestroy {
         private app: AppService,
         private config: ConfigService,
         private platform: PlatformService,
+        private hotkeys: HotkeysService,
+        private element: ElementRef<HTMLElement>,
     ) {}
 
     ngOnInit (): void {
@@ -44,6 +50,51 @@ export class AiPanelComponent implements OnInit, OnDestroy {
 
     ngOnDestroy (): void {
         this.sub.unsubscribe()
+        this.resumeTabbyHotkeys()
+    }
+
+    // ---- keyboard
+    //
+    // Tabby routes hotkeys to the terminal tab that is logically focused, and
+    // that stays true while the user types in this panel: Ctrl+V/Ctrl+Shift+V
+    // would paste into the shell as well, Ctrl+C would send SIGINT to it.
+    // So while DOM focus is inside the panel, Tabby's hotkeys are suspended
+    // and the panel's own hotkeys are matched here instead.
+
+    @HostListener('focusin')
+    onFocusIn (): void {
+        this.suspendTabbyHotkeys()
+    }
+
+    @HostListener('focusout', ['$event'])
+    onFocusOut (event: FocusEvent): void {
+        const next = event.relatedTarget as Node | null
+        if (next && this.element.nativeElement.contains(next)) {
+            return
+        }
+        this.resumeTabbyHotkeys()
+    }
+
+    @HostListener('keydown', ['$event'])
+    onKeydown (event: KeyboardEvent): void {
+        const id = findHotkey(this.config.store.hotkeys, PANEL_HOTKEY_IDS, event)
+        if (id) {
+            event.preventDefault()
+            event.stopPropagation()
+            this.host.runHotkey(id)
+        }
+    }
+
+    private suspendTabbyHotkeys (): void {
+        if (this.hotkeysSuspended) return
+        this.hotkeysSuspended = true
+        this.hotkeys.disable()
+    }
+
+    private resumeTabbyHotkeys (): void {
+        if (!this.hotkeysSuspended) return
+        this.hotkeysSuspended = false
+        this.hotkeys.enable()
     }
 
     get side (): 'left' | 'right' {

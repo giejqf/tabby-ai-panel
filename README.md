@@ -27,7 +27,7 @@ Ask for something like *"set up a WireGuard tunnel between @Linux-1 and @Linux-2
 
 ```bash
 mkdir -p ~/.config/tabby/plugins/node_modules
-unzip tabby-ai-panel-0.1.0.zip -d ~/.config/tabby/plugins/node_modules
+unzip tabby-ai-panel-0.1.1.zip -d ~/.config/tabby/plugins/node_modules
 ```
 
 **From source** (development): `npm install && npm run build && npm run link:tabby` symlinks the checkout into the same folder.

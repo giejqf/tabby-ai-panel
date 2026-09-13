@@ -52,7 +52,7 @@ export class PanelHostService {
                 }
             })
         } })
-        this.hotkeys.hotkey$.subscribe(id => this.zone.run(() => this.handleHotkey(id)))
+        this.hotkeys.hotkey$.subscribe(id => this.zone.run(() => this.runHotkey(id)))
     }
 
     /** Called once by the module so this service never has to import the component. */
@@ -103,7 +103,8 @@ export class PanelHostService {
         return this.side
     }
 
-    private handleHotkey (id: string): void {
+    /** Dispatch one of the panel's hotkeys by id (from Tabby, or from the panel's own key handler). */
+    runHotkey (id: string): void {
         switch (id) {
             case HOTKEY_IDS.toggle:
                 this.toggle()

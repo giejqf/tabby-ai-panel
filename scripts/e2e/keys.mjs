@@ -1,4 +1,4 @@
-// dispatch a hotkey chord: node keys.mjs y ctrl alt
+// dispatch a hotkey chord: node keys.mjs y ctrl alt   (add "paste" to also send the Paste editing command)
 const [key, ...mods] = process.argv.slice(2)
 const targets = await (await fetch('http://localhost:9222/json')).json()
 const page = targets.find(t => t.type === 'page')
@@ -13,7 +13,8 @@ if (mods.includes('ctrl')) modifiers |= 2
 if (mods.includes('meta')) modifiers |= 4
 if (mods.includes('shift')) modifiers |= 8
 const codeFor = k => k.length === 1 ? 'Key' + k.toUpperCase() : k
-const down = async (k, code, m) => send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code, modifiers: m, windowsVirtualKeyCode: k.length === 1 ? k.toUpperCase().charCodeAt(0) : 0 })
+const commands = mods.includes('paste') ? ['Paste'] : []
+const down = async (k, code, m) => send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code, modifiers: m, windowsVirtualKeyCode: k.length === 1 ? k.toUpperCase().charCodeAt(0) : 0, commands: k.length === 1 ? commands : [] })
 const up = async (k, code, m) => send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code, modifiers: m })
 if (mods.includes('ctrl')) await down('Control', 'ControlLeft', 2)
 if (mods.includes('alt')) await down('Alt', 'AltLeft', modifiers)
