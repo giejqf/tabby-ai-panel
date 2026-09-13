@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core'
 import { BehaviorSubject, Observable } from 'rxjs'
-import { ConfigService, NotificationsService, ProfilesService, PartialProfile, Profile } from 'tabby-core'
+import { AppService, ConfigService, NotificationsService, ProfilesService, PartialProfile, Profile } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import {
     ApprovalMode, AssistantMessage, NoteMessage, RunExitState, Session, ToolCallRecord, UserMessage,
@@ -79,6 +79,7 @@ export class AgentService {
         private store: SessionStoreService,
         private profiles: ProfilesService,
         private notifications: NotificationsService,
+        private app: AppService,
         private zone: NgZone,
     ) {
         this.runner = new TerminalRunner(registry)
@@ -184,6 +185,12 @@ export class AgentService {
     keyFor (entry: TerminalEntry): string {
         for (const [key, id] of this.bindings) {
             if (id === entry.id) {
+                // keep the stored label/descriptor in sync with renames and dynamic titles
+                const t = this.session.terminals.find(x => x.key === key)
+                if (t && (t.label !== entry.label || t.descriptor.title !== entry.descriptor.title || t.descriptor.customTitle !== entry.descriptor.customTitle)) {
+                    t.label = entry.label
+                    t.descriptor = { ...entry.descriptor }
+                }
                 return key
             }
         }
@@ -278,6 +285,15 @@ export class AgentService {
         }
         const entry = await this.openProfile(profile)
         if (!entry) return false
+        if (t.descriptor.customTitle) {
+            // keep the name the user gave the original tab (same steps as Tabby's rename)
+            this.zone.run(() => {
+                entry.tab.setTitle(t.descriptor.customTitle!)
+                entry.tab.customTitle = t.descriptor.customTitle!
+                this.app.emitTabsChanged()
+            })
+            this.registry.list()
+        }
         this.bindTerminal(key, entry)
         return true
     }

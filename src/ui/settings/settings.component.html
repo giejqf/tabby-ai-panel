@@ -1,7 +1,13 @@
 <div class="ai-settings">
   <h3>AI Panel</h3>
-  <p class="text-muted">An autonomous agent that can read and type into every open terminal tab. Sessions are saved under
-    <code>{{ store.rootDir }}</code> <a href="#" (click)="openDataFolder(); $event.preventDefault()">open</a>.</p>
+  <p class="text-muted">An autonomous agent that can read and type into every open terminal tab.</p>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Session storage</div>
+      <div class="description"><code>{{ store.rootDir }}</code></div>
+    </div>
+    <button class="btn btn-secondary" (click)="openDataFolder()">Open folder</button>
+  </div>
 
   <h4>Model endpoint</h4>
   <div class="form-line">
@@ -34,7 +40,7 @@
       <div class="description" *ngIf="testResult" [class.text-success]="testResult.ok" [class.text-danger]="!testResult.ok">{{ testResult.message }}</div>
     </div>
     <button class="btn btn-secondary" (click)="test()" [disabled]="testing || !c.endpoint">
-      <i class="fas" [class.fa-plug]="!testing" [class.fa-circle-notch]="testing" [class.fa-spin]="testing"></i> Test
+      {{ testing ? 'Testing…' : 'Test' }}
     </button>
   </div>
   <div class="form-line vertical">
@@ -83,6 +89,13 @@
       <option value="right">Right</option>
       <option value="left">Left</option>
     </select>
+  </div>
+  <div class="form-line">
+    <div class="header">
+      <div class="title">Text size</div>
+      <div class="description">Base font size of the panel in pixels (9–24). Buttons and cards scale with it.</div>
+    </div>
+    <input type="number" class="form-control" min="9" max="24" step="1" [(ngModel)]="c.fontSize" (ngModelChange)="save()" />
   </div>
   <div class="form-line">
     <div class="header">

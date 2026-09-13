@@ -12,6 +12,7 @@ export class TerminalStripComponent implements OnInit, OnDestroy {
     views: SessionTerminalView[] = []
     menuFor: string | null = null
     candidates: TerminalEntry[] = []
+    reconnecting = new Set<string>()
     private sub = new Subscription()
 
     constructor (
@@ -36,18 +37,39 @@ export class TerminalStripComponent implements OnInit, OnDestroy {
     }
 
     statusTitle (v: SessionTerminalView): string {
+        if (this.reconnecting.has(v.key)) {
+            return `${v.key} · reconnecting…`
+        }
+        if (!v.entry) {
+            return `${v.key} · ${v.connection} · closed · ${v.canReconnect ? 'click to reopen it' : 'right-click to attach an open terminal'}`
+        }
         const s = v.status.replace('_', ' ')
         return `${v.key} · ${v.connection} · ${s}${v.used ? '' : ' · not used in this session yet'}`
     }
 
-    click (v: SessionTerminalView, event: MouseEvent): void {
+    async click (v: SessionTerminalView, event: MouseEvent): Promise<void> {
         event.stopPropagation()
+        this.menuFor = null
         if (v.entry) {
             this.registry.focus(v.entry)
-            this.menuFor = null
-        } else {
-            this.toggleMenu(v.key)
+            return
         }
+        if (v.canReconnect && !this.reconnecting.has(v.key)) {
+            // a closed tab: reopen its profile straight away; the menu stays on right-click
+            this.reconnecting.add(v.key)
+            let ok = false
+            try {
+                ok = await this.agent.reconnectTerminal(v.key)
+            } finally {
+                this.reconnecting.delete(v.key)
+                this.refresh()
+            }
+            if (!ok) {
+                this.toggleMenu(v.key)
+            }
+            return
+        }
+        this.toggleMenu(v.key)
     }
 
     openMenu (v: SessionTerminalView, event: MouseEvent): void {

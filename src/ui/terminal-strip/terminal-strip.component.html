@@ -2,12 +2,14 @@
   <div class="chip-wrap" *ngFor="let v of views; trackBy: trackView">
     <button type="button" class="chip"
             [class.used]="v.used" [class.disconnected]="!v.entry" [class.active]="v.isActive"
+            [class.reconnecting]="reconnecting.has(v.key)"
             [title]="statusTitle(v)"
             (click)="click(v, $event)" (contextmenu)="openMenu(v, $event)">
-      <span class="dot" [ngClass]="v.status"></span>
+      <i class="fas fa-circle-notch fa-spin spinner" *ngIf="reconnecting.has(v.key); else dot"></i>
+      <ng-template #dot><span class="dot" [ngClass]="v.status"></span></ng-template>
       <span class="key">{{ v.key }}</span>
       <span class="label">{{ v.label }}</span>
-      <i class="fas fa-unlink" *ngIf="!v.entry"></i>
+      <i class="fas fa-plug" *ngIf="!v.entry && !reconnecting.has(v.key)" title="Closed – click to reopen"></i>
     </button>
 
     <div class="menu" *ngIf="menuFor === v.key" (click)="$event.stopPropagation()">

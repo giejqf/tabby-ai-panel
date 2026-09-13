@@ -24,6 +24,7 @@ export class PanelHostService {
     private mountedTo: 'content' | 'body' | null = null
     private width = DEFAULT_CONFIG.panelWidth
     private side: PanelSide = 'right'
+    private fontSize = DEFAULT_CONFIG.fontSize
 
     constructor (
         private appRef: ApplicationRef,
@@ -40,8 +41,9 @@ export class PanelHostService {
             this.readConfig()
             this.config.changed$.subscribe(() => {
                 const prevSide = this.side
+                const prevFont = this.fontSize
                 this.readConfig()
-                if (this.visible && prevSide !== this.side) {
+                if (this.visible && (prevSide !== this.side || prevFont !== this.fontSize)) {
                     this.applyLayout()
                 }
             })
@@ -132,6 +134,8 @@ export class PanelHostService {
         const c = this.config.store?.[CONFIG_KEY] ?? {}
         this.width = Math.max(MIN_WIDTH, c.panelWidth ?? DEFAULT_CONFIG.panelWidth)
         this.side = c.panelSide === 'left' ? 'left' : 'right'
+        const font = Number(c.fontSize)
+        this.fontSize = Number.isFinite(font) && font >= 9 && font <= 24 ? font : DEFAULT_CONFIG.fontSize
     }
 
     private persist (patch: Record<string, any>): void {
@@ -185,6 +189,7 @@ export class PanelHostService {
         if (!this.wrapper) return
         const body = document.body
         body.style.setProperty('--ai-panel-width', `${this.width}px`)
+        this.wrapper.style.fontSize = `${this.fontSize}px`
         body.classList.add('ai-panel-open')
         body.classList.toggle('ai-panel-left', this.side === 'left')
         body.classList.toggle('ai-panel-right', this.side === 'right')

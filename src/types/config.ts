@@ -12,6 +12,8 @@ export interface AiPanelConfig {
     approvalMode: ApprovalMode
     panelSide: PanelSide
     panelWidth: number
+    /** Base text size of the panel in px; everything else scales with it. */
+    fontSize: number
     panelVisible: boolean
     /** Switch to the tab the agent is acting on. */
     focusTerminalOnRun: boolean
@@ -36,6 +38,7 @@ export const DEFAULT_CONFIG: AiPanelConfig = {
     approvalMode: 'ask',
     panelSide: 'right',
     panelWidth: 420,
+    fontSize: 13,
     panelVisible: false,
     focusTerminalOnRun: false,
     maxToolResultChars: 12000,

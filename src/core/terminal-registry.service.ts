@@ -187,6 +187,8 @@ export class TerminalRegistryService {
             if (entry.closed) {
                 continue
             }
+            // renames set customTitle without a titleChange$, so refresh here
+            entry.descriptor = describeTab(tab)
             seen.add(entry.id)
             ordered.push(entry)
         }
@@ -542,6 +544,7 @@ export function describeTab (tab: BaseTerminalTabComponent<any>): TerminalDescri
         profileId: profile.id || undefined,
         profileName: profile.name || undefined,
         title: tab.customTitle || tab.title || undefined,
+        customTitle: tab.customTitle || undefined,
     }
     if (kind === 'ssh' || kind === 'telnet') {
         d.host = options.host || undefined
@@ -598,6 +601,7 @@ export function matchScore (stored: TerminalDescriptor, open: TerminalDescriptor
         if ((stored.port ?? 22) === (open.port ?? 22)) score += 1
     }
     if (stored.profileName && stored.profileName === open.profileName) score += 2
+    if (stored.customTitle && stored.customTitle === open.customTitle) score += 2
     if (stored.title && stored.title === open.title) score += 1
     return score
 }

@@ -29,11 +29,11 @@
   .tc-icon { opacity: .7; width: 14px; text-align: center; flex: none; }
   .tc-title { font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tc-terminal-link {
-    background: none; border: none; color: inherit; opacity: .5; cursor: pointer; padding: 0 2px; font-size: 11px;
+    background: none; border: none; color: inherit; opacity: .5; cursor: pointer; padding: 0 2px; font-size: .85em;
     &:hover { opacity: 1; color: var(--ai-accent); }
   }
   .tc-status {
-    font-size: 11px;
+    font-size: .85em;
     white-space: nowrap;
     opacity: .8;
     display: inline-flex;
@@ -54,16 +54,16 @@
   background: rgba(0, 0, 0, .22);
   border-radius: var(--ai-radius-sm);
   font-family: var(--ai-mono);
-  font-size: 12px;
+  font-size: .92em;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
 }
 
-.tc-explanation { font-size: 12px; opacity: .8; }
+.tc-explanation { font-size: .92em; opacity: .8; }
 
 .tc-warning {
-  font-size: 12px;
+  font-size: .92em;
   color: var(--ai-danger);
   display: flex;
   gap: 6px;
@@ -107,7 +107,7 @@
       border: none;
       color: inherit;
       font: inherit;
-      font-size: 12px;
+      font-size: .92em;
       padding: 6px 8px;
       border-radius: 4px;
       cursor: pointer;
@@ -121,14 +121,14 @@
   flex-direction: column;
   gap: 8px;
 
-  .question-text { font-size: 13px; }
+  .question-text { font-size: 1em; }
   .choices { display: flex; flex-wrap: wrap; gap: 6px; }
   .answer-row {
     display: flex;
     gap: 6px;
     .ai-input { flex: 1 1 auto; min-width: 0; }
   }
-  .answered { font-size: 12px; opacity: .8; i { margin-right: 4px; opacity: .6; } }
+  .answered { font-size: .92em; opacity: .8; i { margin-right: 4px; opacity: .6; } }
 }
 
 .tc-output-toggle {
@@ -138,14 +138,14 @@
   color: inherit;
   opacity: .65;
   font: inherit;
-  font-size: 11.5px;
+  font-size: .88em;
   padding: 0;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   &:hover { opacity: 1; }
-  i.fas { width: 10px; font-size: 10px; }
+  i.fas { width: 10px; font-size: .77em; }
   .truncated { opacity: .7; }
 }
 
@@ -155,7 +155,7 @@
   background: rgba(0, 0, 0, .22);
   border-radius: var(--ai-radius-sm);
   font-family: var(--ai-mono);
-  font-size: 11.5px;
+  font-size: .88em;
   line-height: 1.4;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -172,11 +172,11 @@
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  .hint { font-size: 11.5px; opacity: .7; }
+  .hint { font-size: .88em; opacity: .7; }
 }
 
 .tc-error {
-  font-size: 12px;
+  font-size: .92em;
   color: var(--ai-danger);
   overflow-wrap: anywhere;
 }

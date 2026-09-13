@@ -19,6 +19,8 @@ export interface TerminalDescriptor {
     port?: number
     user?: string
     title?: string
+    /** Name the user gave the tab (re-applied when the tab is reopened). */
+    customTitle?: string
 }
 
 /** A terminal as the model knows it: a short stable key (`t1`, `t2`, …). */
