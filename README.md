@@ -4,7 +4,7 @@ An autonomous AI agent for [Tabby](https://tabby.sh) that can **see and operate 
 
 Ask for something like *"set up a WireGuard tunnel between @Linux-1 and @Linux-2"* and the agent inspects both hosts, plans, runs the commands in the right tabs (with your approval), reads the results, fixes problems, and verifies the tunnel from both sides.
 
-![Tabby AI Panel running a command in a background tab](docs/screenshot.png)
+![Tabby AI Panel running a command in a background tab](https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/screenshot.png)
 
 ## Features
 
@@ -16,6 +16,8 @@ Ask for something like *"set up a WireGuard tunnel between @Linux-1 and @Linux-2
 - **Native Tabby UI** – docked, resizable sidebar that follows your theme; toolbar button; configurable hotkeys; settings tab.
 
 ## Install
+
+**From Tabby** – Settings → Plugins → search for `ai-panel` → Get, then restart Tabby.
 
 **From the zip** (`npm run pack` → `release/tabby-ai-panel-<version>.zip`): unzip it inside Tabby's plugin folder so that you end up with `plugins/node_modules/tabby-ai-panel/package.json`:
 
