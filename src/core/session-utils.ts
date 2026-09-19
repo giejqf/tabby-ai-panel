@@ -26,7 +26,7 @@ export function summarizeSession (session: Session): SessionSummary {
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         messageCount: session.messages.filter(m => m.role !== 'note').length,
-        terminalLabels: session.terminals.filter(t => t.used).map(t => t.label),
+        terminalLabels: session.terminals.filter(t => t.used && !t.removed).map(t => t.label),
         preview,
     }
 }

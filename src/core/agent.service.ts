@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs'
 import { AppService, ConfigService, NotificationsService, ProfilesService, PartialProfile, Profile } from 'tabby-core'
 import { BaseTerminalTabComponent } from 'tabby-terminal'
 import {
-    ApprovalMode, AssistantMessage, NoteMessage, RunExitState, Session, ToolCallRecord, UserMessage,
+    ApprovalMode, AssistantMessage, NoteMessage, RunExitState, Session, SessionTerminal, ToolCallRecord, UserMessage,
 } from '../types/session'
 import { AiPanelConfig, CONFIG_KEY, DEFAULT_CONFIG } from '../types/config'
 import { ChatMessage, ChatProvider, ToolSpec } from './llm/types'
@@ -181,8 +181,12 @@ export class AgentService {
 
     // ------------------------------------------------------------- terminals
 
-    /** Key the model uses for this terminal; allocates one on first sight. */
-    keyFor (entry: TerminalEntry): string {
+    /**
+     * Key the model uses for this terminal; allocates one on first sight.
+     * `null` when the terminal is bound to a key the user removed from the
+     * session – such a terminal is invisible to the model.
+     */
+    keyFor (entry: TerminalEntry): string | null {
         for (const [key, id] of this.bindings) {
             if (id === entry.id) {
                 // keep the stored label/descriptor in sync with renames and dynamic titles
@@ -191,12 +195,14 @@ export class AgentService {
                     t.label = entry.label
                     t.descriptor = { ...entry.descriptor }
                 }
-                return key
+                return t?.removed ? null : key
             }
         }
         // a stored, currently unbound terminal that matches → reuse its key
+        // (a removed one only when nothing the model may use matches as well)
         let best: { key: string, score: number } | null = null
-        for (const t of this.session.terminals) {
+        const stored = [...this.session.terminals].sort((a, b) => Number(!!a.removed) - Number(!!b.removed))
+        for (const t of stored) {
             if (this.bindings.has(t.key)) continue
             const score = matchScore(t.descriptor, entry.descriptor)
             if (score >= 3 && (!best || score > best.score)) {
@@ -208,7 +214,15 @@ export class AgentService {
             const t = this.session.terminals.find(x => x.key === best!.key)!
             t.label = entry.label
             t.descriptor = entry.descriptor
-            return best.key
+            return t.removed ? null : best.key
+        }
+        return this.allocateKey(entry)
+    }
+
+    /** Give the terminal a brand-new key, dropping any binding it had. */
+    private allocateKey (entry: TerminalEntry): string {
+        for (const [k, id] of [...this.bindings]) {
+            if (id === entry.id) this.bindings.delete(k)
         }
         let n = this.session.terminals.length + 1
         while (this.session.terminals.some(t => t.key === `t${n}`)) n++
@@ -226,38 +240,75 @@ export class AgentService {
         return key
     }
 
+    /** The open terminal behind a key – `null` once the user removed the key from the session. */
     entryFor (key: string): TerminalEntry | null {
+        if (this.session.terminals.find(x => x.key === key)?.removed) return null
+        return this.liveEntry(key)
+    }
+
+    private liveEntry (key: string): TerminalEntry | null {
         const id = this.bindings.get(key)
         if (!id) return null
         const entry = this.registry.byId(id)
         return entry && !entry.closed ? entry : null
     }
 
-    /** Terminals relevant to this session (used ones first) plus open, unused ones. */
-    terminalViews (): SessionTerminalView[] {
-        const open = this.registry.list()
-        const active = this.registry.getActive()
-        for (const e of open) {
-            this.keyFor(e)
+    /** Open terminals the model may see, with their keys, in tab order. */
+    private visibleTerminals (): { entry: TerminalEntry, key: string }[] {
+        const out: { entry: TerminalEntry, key: string }[] = []
+        for (const entry of this.registry.list()) {
+            const key = this.keyFor(entry)
+            if (key) out.push({ entry, key })
         }
-        const views: SessionTerminalView[] = this.session.terminals.map(t => {
-            const entry = this.entryFor(t.key)
-            return {
-                key: t.key,
-                label: entry?.label ?? t.label,
-                connection: describeConnection(entry?.descriptor ?? t.descriptor),
-                used: t.used,
-                entry,
-                status: entry ? this.registry.status(entry) : 'disconnected',
-                isActive: !!entry && entry === active,
-                canReconnect: !entry && !!(t.descriptor.profileId || t.descriptor.profileName),
-            }
-        })
-        // hide never-used terminals that are no longer open
-        return views.filter(v => v.used || v.entry)
+        return out
     }
 
-    /** Manually attach a stored key to an open terminal (from the chip menu). */
+    /** Terminals relevant to this session (used ones first) plus open, unused ones. */
+    terminalViews (): SessionTerminalView[] {
+        this.visibleTerminals()   // make sure every open tab has a key
+        return this.session.terminals.filter(t => !t.removed).map(t => this.viewFor(t)).filter(v => v.used || v.entry)
+    }
+
+    /** Terminals the user removed from this session (for the strip's restore menu). */
+    removedTerminalViews (): SessionTerminalView[] {
+        return this.session.terminals.filter(t => t.removed).map(t => this.viewFor(t)).filter(v => v.used || v.entry)
+    }
+
+    private viewFor (t: SessionTerminal): SessionTerminalView {
+        const entry = this.liveEntry(t.key)
+        return {
+            key: t.key,
+            label: entry?.label ?? t.label,
+            connection: describeConnection(entry?.descriptor ?? t.descriptor),
+            used: t.used,
+            entry,
+            status: entry ? this.registry.status(entry) : 'disconnected',
+            isActive: !!entry && entry === this.registry.getActive(),
+            canReconnect: !entry && !!(t.descriptor.profileId || t.descriptor.profileName),
+        }
+    }
+
+    /**
+     * Take a terminal away from the agent for the rest of this session: it
+     * disappears from listings and snapshots and no tool can resolve it.
+     * The tab itself stays open and the key stays reserved.
+     */
+    removeTerminal (key: string): void {
+        const t = this.session.terminals.find(x => x.key === key)
+        if (!t || t.removed) return
+        t.removed = true
+        this.addNote(`Removed ${key} "${t.label}" from this session – the agent can no longer see or use it.`)
+    }
+
+    /** Undo removeTerminal. */
+    restoreTerminal (key: string): void {
+        const t = this.session.terminals.find(x => x.key === key)
+        if (!t?.removed) return
+        delete t.removed
+        this.addNote(`${key} "${t.label}" is back in this session.`)
+    }
+
+    /** Attach a stored key to an open terminal (used when a closed chip is reconnected). */
     bindTerminal (key: string, entry: TerminalEntry): void {
         for (const [k, id] of [...this.bindings]) {
             if (id === entry.id && k !== key) this.bindings.delete(k)
@@ -303,7 +354,9 @@ export class AgentService {
         const taken = new Set<string>()
         const reconnected: string[] = []
         const missing: string[] = []
-        const candidates = [...this.session.terminals].sort((a, b) => Number(b.used) - Number(a.used))
+        // removed terminals bind last (so they stay hidden without stealing a tab from a usable key)
+        const candidates = [...this.session.terminals]
+            .sort((a, b) => Number(!!a.removed) - Number(!!b.removed) || Number(b.used) - Number(a.used))
         for (const t of candidates) {
             let best: { entry: TerminalEntry, score: number } | null = null
             for (const e of open) {
@@ -315,8 +368,8 @@ export class AgentService {
                 taken.add(best.entry.id)
                 this.bindings.set(t.key, best.entry.id)
                 t.label = best.entry.label
-                if (t.used) reconnected.push(`${t.key} → "${best.entry.label}"`)
-            } else if (t.used) {
+                if (t.used && !t.removed) reconnected.push(`${t.key} → "${best.entry.label}"`)
+            } else if (t.used && !t.removed) {
                 missing.push(`${t.key} "${t.label}" (${describeConnection(t.descriptor)})`)
             }
         }
@@ -360,13 +413,12 @@ export class AgentService {
     }
 
     private terminalSnapshot (): string {
-        const open = this.registry.list()
-        if (!open.length) {
+        const visible = this.visibleTerminals()
+        if (!visible.length) {
             return '<terminals>\n(no terminal tabs open)\n</terminals>'
         }
         const active = this.registry.getActive()
-        const lines = open.map(e => {
-            const key = this.keyFor(e)
+        const lines = visible.map(({ entry: e, key }) => {
             const bits = [`${key} "${e.label}" — ${describeConnection(e.descriptor)} — ${this.registry.status(e)}`]
             if (e === active) bits.push('— active tab')
             return bits.join(' ')
@@ -744,7 +796,8 @@ export class AgentService {
                 if (!entry) {
                     throw new Error(`Failed to open a tab for profile "${profile.name}".`)
                 }
-                const key = this.keyFor(entry)
+                // the new tab may look like a terminal the user removed – the agent opened this one, so it gets a fresh key
+                const key = this.keyFor(entry) ?? this.allocateKey(entry)
                 return { entry, key, label: entry.label }
             },
             listProfiles: () => this.profilesCache.map(p => ({
@@ -760,38 +813,38 @@ export class AgentService {
         if (!raw) {
             throw new Error('terminal is required – use a key like "t1" from list_terminals.')
         }
-        const open = this.registry.list()
-        for (const e of open) this.keyFor(e)
+        // removed terminals are absent from every lookup below, as if the tab did not exist
+        const visible = this.visibleTerminals()
         const lower = raw.toLowerCase()
-        let entry: TerminalEntry | null = null
+        let found: { entry: TerminalEntry, key: string } | undefined
         if (lower === 'active') {
-            entry = this.registry.getActive()
-            if (!entry) throw new Error('No terminal tab is active.')
+            const active = this.registry.getActive()
+            found = visible.find(v => v.entry === active)
+            if (!found) throw new Error('No terminal tab is active.')
         } else if (/^t\d+$/i.test(raw)) {
-            entry = this.entryFor(lower)
-            if (!entry) {
+            found = visible.find(v => v.key === lower)
+            if (!found) {
                 const stored = this.session.terminals.find(t => t.key === lower)
-                if (stored) {
+                if (stored && !stored.removed) {
                     throw new Error(`Terminal ${lower} "${stored.label}" is not open right now. Ask the user to reconnect it, or use open_terminal / list_terminals.`)
                 }
                 throw new Error(`Unknown terminal "${raw}". Call list_terminals for valid keys.`)
             }
         } else {
-            entry = open.find(e => e.label.toLowerCase() === lower)
-                ?? open.find(e => e.label.toLowerCase().startsWith(lower))
-                ?? open.find(e => (e.descriptor.host ?? '').toLowerCase() === lower)
-                ?? null
-            if (!entry) {
-                throw new Error(`No open terminal is labelled "${raw}". Open terminals: ${open.map(e => `${this.keyFor(e)} "${e.label}"`).join(', ') || '(none)'}.`)
+            found = visible.find(v => v.entry.label.toLowerCase() === lower)
+                ?? visible.find(v => v.entry.label.toLowerCase().startsWith(lower))
+                ?? visible.find(v => (v.entry.descriptor.host ?? '').toLowerCase() === lower)
+            if (!found) {
+                throw new Error(`No open terminal is labelled "${raw}". Open terminals: ${visible.map(v => `${v.key} "${v.entry.label}"`).join(', ') || '(none)'}.`)
             }
         }
-        return { entry, key: this.keyFor(entry), label: entry.label }
+        return { entry: found.entry, key: found.key, label: found.entry.label }
     }
 
     private listTerminals (): TerminalListing[] {
         const active = this.registry.getActive()
-        return this.registry.list().map(e => ({
-            key: this.keyFor(e),
+        return this.visibleTerminals().map(({ entry: e, key }) => ({
+            key,
             label: e.label,
             connection: describeConnection(e.descriptor),
             status: this.registry.status(e),

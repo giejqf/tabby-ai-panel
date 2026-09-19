@@ -30,6 +30,12 @@ export interface SessionTerminal {
     descriptor: TerminalDescriptor
     /** True once the agent actually ran/read something here (vs. merely listed). */
     used: boolean
+    /**
+     * Removed from the session by the user: hidden from the model, never
+     * resolvable by a tool. The key stays reserved so old transcript
+     * references never point at a different terminal.
+     */
+    removed?: boolean
     lastCwd?: string
     firstSeenAt: string
     lastUsedAt: string

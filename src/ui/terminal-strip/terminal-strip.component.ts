@@ -1,7 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { AgentService, SessionTerminalView } from '../../core/agent.service'
-import { TerminalEntry, TerminalRegistryService } from '../../core/terminal-registry.service'
+import { TerminalRegistryService } from '../../core/terminal-registry.service'
 
 @Component({
     selector: 'ai-terminal-strip',
@@ -10,8 +10,10 @@ import { TerminalEntry, TerminalRegistryService } from '../../core/terminal-regi
 })
 export class TerminalStripComponent implements OnInit, OnDestroy {
     views: SessionTerminalView[] = []
-    menuFor: string | null = null
-    candidates: TerminalEntry[] = []
+    hidden: SessionTerminalView[] = []
+    hiddenMenu = false
+    /** Viewport position of the hidden-terminals menu (position: fixed, so the strip's scroll clipping cannot hide it). */
+    menuPos = { top: 0, left: 0 }
     reconnecting = new Set<string>()
     private sub = new Subscription()
 
@@ -41,7 +43,7 @@ export class TerminalStripComponent implements OnInit, OnDestroy {
             return `${v.key} · reconnecting…`
         }
         if (!v.entry) {
-            return `${v.key} · ${v.connection} · closed · ${v.canReconnect ? 'click to reopen it' : 'right-click to attach an open terminal'}`
+            return `${v.key} · ${v.connection} · closed${v.canReconnect ? ' · click to reopen it' : ''}`
         }
         const s = v.status.replace('_', ' ')
         return `${v.key} · ${v.connection} · ${s}${v.used ? '' : ' · not used in this session yet'}`
@@ -49,61 +51,56 @@ export class TerminalStripComponent implements OnInit, OnDestroy {
 
     async click (v: SessionTerminalView, event: MouseEvent): Promise<void> {
         event.stopPropagation()
-        this.menuFor = null
+        this.closeMenu()
         if (v.entry) {
             this.registry.focus(v.entry)
             return
         }
         if (v.canReconnect && !this.reconnecting.has(v.key)) {
-            // a closed tab: reopen its profile straight away; the menu stays on right-click
+            // a closed tab: reopen its profile straight away
             this.reconnecting.add(v.key)
-            let ok = false
             try {
-                ok = await this.agent.reconnectTerminal(v.key)
+                await this.agent.reconnectTerminal(v.key)
             } finally {
                 this.reconnecting.delete(v.key)
                 this.refresh()
             }
-            if (!ok) {
-                this.toggleMenu(v.key)
-            }
-            return
         }
-        this.toggleMenu(v.key)
     }
 
-    openMenu (v: SessionTerminalView, event: MouseEvent): void {
-        event.preventDefault()
+    remove (v: SessionTerminalView, event: MouseEvent): void {
         event.stopPropagation()
-        this.toggleMenu(v.key)
+        this.closeMenu()
+        this.agent.removeTerminal(v.key)
+        this.refresh()
     }
 
-    private toggleMenu (key: string): void {
-        if (this.menuFor === key) {
-            this.menuFor = null
-            return
+    toggleHiddenMenu (event: MouseEvent): void {
+        event.stopPropagation()
+        if (!this.hiddenMenu) {
+            // place the menu just under the chip, kept inside the window
+            const chip = (event.target as HTMLElement | null)?.closest('.chip-wrap') as HTMLElement | null
+            const rect = chip?.getBoundingClientRect()
+            if (rect) {
+                this.menuPos = { top: rect.bottom + 4, left: Math.max(4, Math.min(rect.left, window.innerWidth - 300)) }
+            }
         }
-        // open terminals that could be attached to this key
-        this.candidates = this.registry.list()
-        this.menuFor = key
+        this.hiddenMenu = !this.hiddenMenu
     }
 
-    attach (key: string, entry: TerminalEntry): void {
-        this.agent.bindTerminal(key, entry)
-        this.menuFor = null
-    }
-
-    async reconnect (v: SessionTerminalView): Promise<void> {
-        this.menuFor = null
-        await this.agent.reconnectTerminal(v.key)
+    restore (v: SessionTerminalView): void {
+        this.agent.restoreTerminal(v.key)
+        this.refresh()
+        if (!this.hidden.length) this.hiddenMenu = false
     }
 
     @HostListener('document:click')
     closeMenu (): void {
-        this.menuFor = null
+        this.hiddenMenu = false
     }
 
     private refresh (): void {
         this.views = this.agent.terminalViews()
+        this.hidden = this.agent.removedTerminalViews()
     }
 }

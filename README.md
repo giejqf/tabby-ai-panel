@@ -29,7 +29,7 @@ Ask for something like *"set up a WireGuard tunnel between @Linux-1 and @Linux-2
 
 ```bash
 mkdir -p ~/.config/tabby/plugins/node_modules
-unzip tabby-ai-panel-0.1.2.zip -d ~/.config/tabby/plugins/node_modules
+unzip tabby-ai-panel-0.1.3.zip -d ~/.config/tabby/plugins/node_modules
 ```
 
 **From source** (development): `npm install && npm run build && npm run link:tabby` symlinks the checkout into the same folder.
@@ -40,7 +40,7 @@ Restart Tabby, then open **Settings → AI Panel** and set your endpoint, API ke
 
 - Type a request. Mention terminals with `@` (autocomplete lists open tabs).
 - Commands appear as cards: **Approve** / **Deny**, or open the caret menu to approve and auto-approve low-risk actions for the rest of the session. Hotkeys: `Ctrl+Alt+Y` approve, `Ctrl+Alt+X` deny, `Ctrl+Alt+S` stop.
-- The chip bar shows the terminals in this session with a live status dot. Click a chip to jump to that tab; right-click (or click a disconnected chip) to reconnect or attach it to another tab.
+- The chip bar shows the terminals in this session with a live status dot. Click a chip to jump to that tab, or to reconnect it if it was closed. Click a chip's **×** to take that terminal away from the agent for this session: it disappears from its listings and no tool can reach it (the tab itself stays open). Removed terminals are counted in a *hidden* chip, from which you can restore them.
 - `☰` opens the session drawer. Sessions are stored in `<Tabby config dir>/ai-panel/sessions/*.json`.
 - Code blocks in answers have **Copy** and **Insert** (types into the active terminal without pressing Enter).
 

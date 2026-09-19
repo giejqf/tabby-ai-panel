@@ -171,6 +171,8 @@ export class ComposerComponent implements OnInit, OnDestroy {
         const open = this.registry.list()
         this.mentionOptions = open
             .map(e => ({ key: this.agent.keyFor(e), label: e.label, connection: describe(e.descriptor) }))
+            // terminals removed from the session have no key and cannot be mentioned
+            .filter((o): o is MentionOption => !!o.key)
             .filter(o => !query || o.label.toLowerCase().includes(query) || o.key === query)
             .slice(0, 8)
         this.mentionIndex = 0

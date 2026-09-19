@@ -16,7 +16,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 9px 3px 7px;
+  // room on the right for the remove button, which sits inside the pill
+  padding: 3px 22px 3px 7px;
   border-radius: 12px;
   border: 1px solid var(--ai-border);
   background: var(--ai-surface);
@@ -27,12 +28,19 @@
   max-width: 220px;
   opacity: .7;
 
-  &:hover { background: var(--ai-surface-2); opacity: 1; }
+  .chip-wrap:hover > & { background: var(--ai-surface-2); opacity: 1; }
   &.used { opacity: 1; border-color: color-mix(in srgb, var(--ai-accent) 45%, var(--ai-border)); }
   &.active { box-shadow: 0 0 0 1px var(--ai-accent); }
   &.disconnected { border-style: dashed; }
 
   &.reconnecting { opacity: .9; cursor: progress; }
+
+  &.hidden-chip {
+    padding-right: 9px;
+    border-style: dotted;
+    i { font-size: .8em; opacity: .6; }
+    .label { font-weight: 500; opacity: .75; }
+  }
 
   .key { font-family: var(--ai-mono); font-size: .87em; opacity: .6; }
   .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -40,12 +48,37 @@
   .spinner { font-size: .8em; color: var(--ai-accent); }
 }
 
-.menu {
+.chip-remove {
   position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: .72em;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .35;
+
+  .chip-wrap:hover > & { opacity: .7; }
+  &:hover, &:focus-visible { opacity: 1; background: color-mix(in srgb, var(--ai-danger) 22%, transparent); color: var(--ai-danger); outline: none; }
+  &:disabled { opacity: .15; cursor: not-allowed; background: none; color: inherit; }
+}
+
+.menu {
+  // fixed (positioned from the component) so the strip's overflow: auto cannot clip it
+  position: fixed;
   z-index: 30;
   min-width: 230px;
+  max-width: 290px;
   background: var(--ai-bg);
   border: 1px solid var(--ai-border);
   border-radius: var(--ai-radius-sm);
@@ -53,8 +86,6 @@
   padding: 4px;
 
   .menu-title { font-size: .85em; opacity: .6; padding: 4px 8px; }
-  .menu-section { font-size: .85em; opacity: .6; padding: 6px 8px 2px; }
-  .menu-empty { font-size: .88em; opacity: .6; padding: 4px 8px; }
   button {
     display: flex;
     align-items: center;
@@ -71,5 +102,8 @@
     text-align: left;
     &:hover { background: var(--ai-surface-2); }
     i { width: 12px; opacity: .7; }
+    .key { font-family: var(--ai-mono); font-size: .87em; opacity: .6; }
+    .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .muted { margin-left: auto; font-size: .85em; opacity: .5; }
   }
 }

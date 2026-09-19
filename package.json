@@ -1,6 +1,6 @@
 {
   "name": "tabby-ai-panel",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "An autonomous AI agent panel for Tabby: works across terminal tabs, keeps persistent, resumable sessions, and runs commands with reviewable approvals.",
   "keywords": [
     "tabby-plugin",
