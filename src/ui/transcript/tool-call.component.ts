@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ElementRef, ViewChild, AfterViewChecked } from '@angular/core'
+import { Component, Input } from '@angular/core'
 import { ConfigService } from 'tabby-core'
 import { AgentService } from '../../core/agent.service'
 import { TerminalRegistryService } from '../../core/terminal-registry.service'
@@ -11,36 +11,18 @@ import { countLines } from '../../core/util/text'
     templateUrl: './tool-call.component.html',
     styleUrls: ['./tool-call.component.scss'],
 })
-export class ToolCallComponent implements OnChanges, AfterViewChecked {
+export class ToolCallComponent {
     @Input() call!: ToolCallRecord
-    @ViewChild('outputBox') outputBox?: ElementRef<HTMLElement>
 
     expanded: boolean | null = null    // null = automatic
     answerDraft = ''
     showApproveMenu = false
-    private lastProgressLength = 0
 
     constructor (
         private agent: AgentService,
         private registry: TerminalRegistryService,
         private config: ConfigService,
     ) {}
-
-    ngOnChanges (_changes: SimpleChanges): void {
-        this.lastProgressLength = 0
-    }
-
-    ngAfterViewChecked (): void {
-        // keep the live output tail in view while a command is running
-        const box = this.outputBox?.nativeElement
-        if (box && this.isRunning) {
-            const len = this.call.progress?.length ?? 0
-            if (len !== this.lastProgressLength) {
-                this.lastProgressLength = len
-                box.scrollTop = box.scrollHeight
-            }
-        }
-    }
 
     // ---- derived display data
 

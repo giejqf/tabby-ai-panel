@@ -26,6 +26,7 @@ import { SessionListComponent } from './ui/sessions/session-list.component'
 import { AiPanelSettingsComponent } from './ui/settings/settings.component'
 import { MarkdownPipe } from './ui/pipes/markdown.pipe'
 import { RelativeTimePipe } from './ui/pipes/relative-time.pipe'
+import { StickToBottomDirective } from './ui/util/stick-to-bottom.directive'
 
 /** @hidden */
 @NgModule({
@@ -53,6 +54,7 @@ import { RelativeTimePipe } from './ui/pipes/relative-time.pipe'
         AiPanelSettingsComponent,
         MarkdownPipe,
         RelativeTimePipe,
+        StickToBottomDirective,
     ],
 })
 export default class AiPanelModule {

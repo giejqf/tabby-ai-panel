@@ -63,7 +63,7 @@
       {{ isRunning ? 'Live output' : 'Output' }} · {{ outputLines }} {{ outputLines === 1 ? 'line' : 'lines' }}
       <span class="truncated" *ngIf="call.truncatedForModel" title="The model received a shortened version">· shortened for the model</span>
     </button>
-    <pre #outputBox class="tc-output" *ngIf="showOutput" [class.live]="isRunning">{{ outputText }}</pre>
+    <pre class="tc-output" *ngIf="showOutput" [class.live]="isRunning" [aiStickToBottom]="isRunning">{{ outputText }}</pre>
   </ng-container>
 
   <div class="tc-footer" *ngIf="canInterrupt">
