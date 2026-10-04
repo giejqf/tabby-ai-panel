@@ -15,24 +15,21 @@
       <div class="title">Endpoint</div>
       <div class="description">Any OpenAI-compatible server: OpenRouter, LiteLLM, llama.cpp, vLLM, Ollama, LM Studio… Base URL or full <code>/v1/chat/completions</code> URL.</div>
     </div>
-    <input type="text" class="form-control" placeholder="http://localhost:8080" [(ngModel)]="c.endpoint" (ngModelChange)="save()" />
+    <input type="text" class="form-control" placeholder="http://localhost:8080" [(ngModel)]="c.endpoint" (ngModelChange)="save(); connectionChanged()" />
   </div>
   <div class="form-line">
     <div class="header">
       <div class="title">API key</div>
       <div class="description">Sent as a Bearer token. Leave empty for local servers.</div>
     </div>
-    <input type="password" class="form-control" [(ngModel)]="c.apiKey" (ngModelChange)="save()" autocomplete="off" />
+    <input type="password" class="form-control" [(ngModel)]="c.apiKey" (ngModelChange)="save(); connectionChanged()" autocomplete="off" />
   </div>
   <div class="form-line">
     <div class="header">
       <div class="title">Model</div>
-      <div class="description">Model id as the server expects it. Must support tool calling.</div>
+      <div class="description">Pick from the server's list, or type any id it accepts. Must support tool calling.</div>
     </div>
-    <input type="text" class="form-control" list="ai-panel-models" placeholder="e.g. qwen3-32b, gpt-4.1, anthropic/claude-sonnet-4.5" [(ngModel)]="c.model" (ngModelChange)="save()" />
-    <datalist id="ai-panel-models">
-      <option *ngFor="let m of models" [value]="m"></option>
-    </datalist>
+    <ai-model-picker class="model-picker" [(value)]="c.model" (valueChange)="save()" placeholder="Select a model"></ai-model-picker>
   </div>
   <div class="form-line">
     <div class="header">

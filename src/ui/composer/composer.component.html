@@ -30,6 +30,8 @@
     </label>
     <span class="spacer"></span>
     <span class="meta" *ngIf="tokenSummary">{{ tokenSummary }}</span>
-    <span class="meta model" [title]="'Model: ' + model">{{ model }}</span>
+    <ai-model-picker class="model" variant="inline" [value]="model" (valueChange)="setModel($event)"
+                     placeholder="Server default" [hint]="busy ? 'The running task keeps its model; a change applies from your next message.' : ''">
+    </ai-model-picker>
   </div>
 </div>

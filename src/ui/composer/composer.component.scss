@@ -99,18 +99,19 @@
   align-items: center;
   gap: 8px;
   font-size: .85em;
-  opacity: .85;
   min-width: 0;
 
+  // opacity on the children, not the footer: it would also fade the model picker's popover
   .approval {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin: 0;
+    opacity: .85;
     i { opacity: .6; }
     .ai-select { font-size: 1em; padding: 2px 20px 2px 6px; }
   }
   .spacer { flex: 1 1 auto; }
-  .meta { opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .model { max-width: 40%; }
+  .meta { opacity: .5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .model { max-width: 45%; }
 }

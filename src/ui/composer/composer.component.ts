@@ -56,7 +56,12 @@ export class ComposerComponent implements OnInit, OnDestroy {
     }
 
     get model (): string {
-        return this.config.store[CONFIG_KEY]?.model || 'default model'
+        return this.config.store[CONFIG_KEY]?.model ?? ''
+    }
+
+    setModel (id: string): void {
+        this.config.store[CONFIG_KEY].model = id
+        this.config.save()
     }
 
     get approvalMode (): ApprovalMode {

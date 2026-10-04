@@ -34,7 +34,7 @@ unzip tabby-ai-panel-0.1.3.zip -d ~/.config/tabby/plugins/node_modules
 
 **From source** (development): `npm install && npm run build && npm run link:tabby` symlinks the checkout into the same folder.
 
-Restart Tabby, then open **Settings → AI Panel** and set your endpoint, API key and model. Use **Test** to verify the connection. Open the panel with the **AI Agent** toolbar button or `Ctrl+Alt+A` (`⌘⇧A` on macOS).
+Restart Tabby, then open **Settings → AI Panel**, set your endpoint and API key, and pick a model from the list the server reports (or type any id). Use **Test** to verify the connection. You can switch models later from the model name under the composer. Open the panel with the **AI Agent** toolbar button or `Ctrl+Alt+A` (`⌘⇧A` on macOS).
 
 ## Usage
 

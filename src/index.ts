@@ -27,6 +27,7 @@ import { AiPanelSettingsComponent } from './ui/settings/settings.component'
 import { MarkdownPipe } from './ui/pipes/markdown.pipe'
 import { RelativeTimePipe } from './ui/pipes/relative-time.pipe'
 import { StickToBottomDirective } from './ui/util/stick-to-bottom.directive'
+import { ModelPickerComponent } from './ui/model-picker/model-picker.component'
 
 /** @hidden */
 @NgModule({
@@ -55,6 +56,7 @@ import { StickToBottomDirective } from './ui/util/stick-to-bottom.directive'
         MarkdownPipe,
         RelativeTimePipe,
         StickToBottomDirective,
+        ModelPickerComponent,
     ],
 })
 export default class AiPanelModule {

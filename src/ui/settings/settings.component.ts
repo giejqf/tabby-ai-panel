@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
+import { Subscription } from 'rxjs'
 import { ConfigService, PlatformService } from 'tabby-core'
 import { OpenAICompatibleProvider } from '../../core/llm/openai-compatible'
 import { SessionStoreService } from '../../core/session-store.service'
+import { ModelCatalogService } from '../../core/model-catalog.service'
 import { AiPanelConfig, CONFIG_KEY, DEFAULT_CONFIG } from '../../types/config'
 
 @Component({
@@ -9,16 +11,18 @@ import { AiPanelConfig, CONFIG_KEY, DEFAULT_CONFIG } from '../../types/config'
     templateUrl: './settings.component.html',
     styleUrls: ['./settings.component.scss'],
 })
-export class AiPanelSettingsComponent implements OnInit {
+export class AiPanelSettingsComponent implements OnInit, OnDestroy {
     testing = false
     testResult: { ok: boolean, message: string } | null = null
-    models: string[] = []
     extraParamsError: string | null = null
+    private sub = new Subscription()
+    private reloadTimer: any = null
 
     constructor (
         public config: ConfigService,
         private platform: PlatformService,
         public store: SessionStoreService,
+        private catalog: ModelCatalogService,
     ) {}
 
     ngOnInit (): void {
@@ -27,6 +31,25 @@ export class AiPanelSettingsComponent implements OnInit {
             this.config.store[CONFIG_KEY][k] ??= v
         }
         this.validateExtraParams()
+        this.sub.add(this.catalog.state$.subscribe(state => {
+            // a server with a single model (llama.cpp, LM Studio) needs no choice
+            if (state.status === 'ready' && state.models.length === 1 && !this.c.model) {
+                this.c.model = state.models[0].id
+                this.save()
+            }
+        }))
+        void this.catalog.ensure()
+    }
+
+    ngOnDestroy (): void {
+        this.sub.unsubscribe()
+        clearTimeout(this.reloadTimer)
+    }
+
+    /** Endpoint or API key edited: reload the model list once typing pauses. */
+    connectionChanged (): void {
+        clearTimeout(this.reloadTimer)
+        this.reloadTimer = setTimeout(() => void this.catalog.refresh(), 800)
     }
 
     get c (): AiPanelConfig {
@@ -57,13 +80,10 @@ export class AiPanelSettingsComponent implements OnInit {
         try {
             const provider = new OpenAICompatibleProvider({ endpoint: this.c.endpoint, apiKey: this.c.apiKey, model: this.c.model })
             const result = await provider.ping()
-            this.models = result.models ?? []
-            const modelNote = this.models.length ? ` ${this.models.length} model${this.models.length === 1 ? '' : 's'} available.` : ''
+            const count = result.models?.length ?? 0
+            const modelNote = count ? ` ${count} model${count === 1 ? '' : 's'} available.` : ''
             this.testResult = { ok: true, message: `Connected.${modelNote}` }
-            if (!this.c.model && this.models.length === 1) {
-                this.c.model = this.models[0]
-                this.save()
-            }
+            void this.catalog.refresh()
         } catch (e) {
             this.testResult = { ok: false, message: (e as Error).message }
         } finally {

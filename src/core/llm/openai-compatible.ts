@@ -1,5 +1,6 @@
 import { ChatMessage, ChatProvider, ChatStreamEvent, ProviderConfig, ToolSpec } from './types'
-import { HttpError, parseSSE, readAll, streamRequest } from '../util/sse'
+import { HttpError, parseSSE, readAll, streamRequest, StreamResponse } from '../util/sse'
+import { ModelInfo, parseModelList } from './models'
 
 /** `https://host/v1/chat/completions` | `https://host/v1` | `https://host` → `https://host` */
 export function normalizeBaseUrl (endpoint: string): string {
@@ -167,30 +168,39 @@ export class OpenAICompatibleProvider implements ChatProvider {
         }
     }
 
-    async ping (): Promise<{ ok: true, models?: string[] }> {
+    /**
+     * The server's model list, or null when it does not offer one
+     * (`/v1/models` is optional). Throws on network and auth errors.
+     */
+    async listModels (): Promise<ModelInfo[] | null> {
         const url = modelsUrl(this.config.endpoint)
+        let res: StreamResponse
+        let text: string
         try {
-            const res = await streamRequest(url, { method: 'GET', headers: this.headers(), timeoutMs: 10000 })
-            const text = await readAll(res.chunks)
-            if (res.status >= 200 && res.status < 300) {
-                try {
-                    const parsed = JSON.parse(text)
-                    const models = (parsed?.data ?? parsed?.models ?? []).map((m: any) => m.id ?? m.name).filter(Boolean)
-                    return { ok: true, models }
-                } catch {
-                    return { ok: true }
-                }
-            }
-            // /v1/models is optional; fall back to a 1-token completion
-            if (res.status !== 404 && res.status !== 405) {
-                throw new HttpError(res.status, extractErrorMessage(text), url)
-            }
+            res = await streamRequest(url, { method: 'GET', headers: this.headers(), timeoutMs: 10000 })
+            text = await readAll(res.chunks)
         } catch (e) {
-            if (e instanceof HttpError) {
-                throw e
-            }
             throw new Error(`Cannot reach ${url}: ${(e as Error).message}`)
         }
+        if (res.status === 404 || res.status === 405) {
+            return null
+        }
+        if (res.status < 200 || res.status >= 300) {
+            throw new HttpError(res.status, extractErrorMessage(text), url)
+        }
+        try {
+            return parseModelList(JSON.parse(text))
+        } catch {
+            return null
+        }
+    }
+
+    async ping (): Promise<{ ok: true, models?: string[] }> {
+        const models = await this.listModels()
+        if (models) {
+            return { ok: true, models: models.map(m => m.id) }
+        }
+        // no model list; fall back to a 1-token completion
         const completions = chatCompletionsUrl(this.config.endpoint)
         const res = await streamRequest(completions, {
             method: 'POST',

@@ -1,0 +1,233 @@
+// Used both inside the panel (--ai-* variables) and on Tabby's settings page
+// (where they are not defined), hence the fallbacks.
+:host {
+  --mp-bg: var(--ai-bg, var(--theme-bg, var(--bs-body-bg, #1b1e23)));
+  --mp-border: var(--ai-border, rgba(127, 127, 127, .28));
+  --mp-hover: var(--ai-surface-2, rgba(127, 127, 127, .18));
+  --mp-accent: var(--ai-accent, var(--theme-primary, var(--bs-primary, #4d9be6)));
+  --mp-warning: var(--ai-warning, var(--theme-warning, var(--bs-warning, #f5a524)));
+  --mp-danger: var(--ai-danger, var(--theme-danger, var(--bs-danger, #e5484d)));
+  --mp-mono: var(--ai-mono, var(--bs-font-monospace, monospace));
+
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+// the popover anchors to the nearest positioned ancestor instead (the composer)
+:host(.variant-inline) {
+  position: static;
+  display: inline-flex;
+}
+
+.mp-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  cursor: pointer;
+
+  .mp-value {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    &.placeholder { opacity: .55; }
+  }
+  .mp-caret { flex: none; font-size: .7em; opacity: .6; transition: transform .15s; }
+  &.open .mp-caret { transform: rotate(180deg); }
+}
+
+:host(.variant-inline) .mp-trigger {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  width: auto;
+  max-width: 100%;
+  padding: 1px 4px;
+  gap: 4px;
+  opacity: .5;
+  &:hover, &.open { opacity: 1; background: var(--mp-hover); }
+  &:focus-visible { outline: 1px solid var(--mp-accent); opacity: 1; }
+}
+
+.mp-popover {
+  position: absolute;
+  top: calc(100% + 3px);
+  // a form field sits at the right end of its row: grow leftwards
+  right: 0;
+  width: 360px;
+  min-width: 100%;
+  max-width: calc(100vw - 32px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--mp-bg);
+  border: 1px solid var(--mp-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
+  font-size: .95rem;
+  animation: mp-in .12s ease-out;
+
+  &.up {
+    top: auto;
+    bottom: calc(100% + 3px);
+    animation-name: mp-in-up;
+  }
+}
+
+// same footprint as the composer's @-mention list
+:host(.variant-inline) .mp-popover {
+  top: auto;
+  bottom: calc(100% + 2px);
+  left: 10px;
+  right: 10px;
+  width: auto;
+  min-width: 0;
+  font-size: 1.08em;  // the footer is .85em; match the @-mention list
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, .3);
+  animation-name: mp-in-up;
+}
+
+.mp-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 10px;
+  border-bottom: 1px solid var(--mp-border);
+
+  > i { opacity: .45; font-size: .85em; }
+  input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: none;
+    border: none;
+    outline: none;
+    color: inherit;
+    font: inherit;
+    padding: 2px 0;
+    &::placeholder { opacity: .5; }
+  }
+}
+
+.mp-icon-btn {
+  flex: none;
+  width: 1.9em;
+  height: 1.9em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  opacity: .6;
+  cursor: pointer;
+  &:hover:not(:disabled) { opacity: 1; background: var(--mp-hover); }
+  &:disabled { cursor: default; }
+}
+
+.mp-hint {
+  padding: 5px 10px;
+  font-size: .85em;
+  opacity: .65;
+  border-bottom: 1px solid var(--mp-border);
+}
+
+.mp-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.mp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: .92em;
+  padding: 5px 8px;
+  text-align: left;
+  cursor: pointer;
+
+  &.active { background: var(--mp-hover); }
+
+  .mp-check { flex: none; width: 1em; font-size: .8em; color: var(--mp-accent); visibility: hidden; }
+  &.selected .mp-check, &.custom .mp-check { visibility: visible; }
+  &.custom .mp-check { color: inherit; opacity: .6; }
+
+  .mp-id {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-family: var(--mp-mono);
+    font-size: .92em;
+  }
+  &.custom .mp-id { font-family: inherit; font-size: inherit; }
+  &.selected .mp-id { font-weight: 600; }
+
+  .mp-ctx { flex: none; font-size: .85em; opacity: .5; font-variant-numeric: tabular-nums; }
+  .mp-tag {
+    flex: none;
+    font-size: .77em;
+    padding: 0 5px;
+    border-radius: 8px;
+    border: 1px solid var(--mp-border);
+    opacity: .75;
+    &.warn { color: var(--mp-warning); border-color: color-mix(in srgb, var(--mp-warning) 45%, transparent); opacity: 1; }
+  }
+}
+
+.mp-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  font-size: .88em;
+  opacity: .75;
+  i { margin-top: 3px; }
+
+  &.error { color: var(--mp-danger); opacity: 1; }
+  .mp-status-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+}
+
+.mp-link {
+  flex: none;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--mp-accent);
+  font: inherit;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}
+
+.mp-footer {
+  padding: 4px 10px;
+  border-top: 1px solid var(--mp-border);
+  font-size: .8em;
+  opacity: .5;
+  text-align: right;
+}
+
+@keyframes mp-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes mp-in-up {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}

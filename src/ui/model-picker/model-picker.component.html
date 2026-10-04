@@ -1,0 +1,59 @@
+<button #trigger type="button" class="mp-trigger" [class.form-control]="variant === 'field'" [class.open]="open"
+        (click)="toggle()" (keydown)="onTriggerKeydown($event)"
+        aria-haspopup="listbox" [attr.aria-expanded]="open" [title]="value ? 'Model: ' + value : placeholder">
+  <span class="mp-value" [class.placeholder]="!value">{{ value || placeholder }}</span>
+  <i class="fas fa-chevron-down mp-caret"></i>
+</button>
+
+<div class="mp-popover" *ngIf="open" [class.up]="dropUp">
+  <div class="mp-search">
+    <i class="fas fa-search"></i>
+    <input #search type="text" [(ngModel)]="query" (ngModelChange)="onQuery()" (keydown)="onSearchKeydown($event)"
+           placeholder="Search, or type any model id" spellcheck="false" autocomplete="off"
+           role="combobox" aria-autocomplete="list" [attr.aria-expanded]="true" />
+    <button class="mp-icon-btn" type="button" (click)="refresh()" [disabled]="loading" title="Reload the model list">
+      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+    </button>
+  </div>
+
+  <div class="mp-hint" *ngIf="hint">{{ hint }}</div>
+
+  <div #list class="mp-list" role="listbox">
+    <button *ngFor="let m of items; let i = index" type="button" role="option" class="mp-item"
+            [class.active]="i === activeIndex" [class.selected]="m.id === value" [attr.aria-selected]="m.id === value"
+            (mousedown)="$event.preventDefault()" (mousemove)="hover(i)" (click)="pick(m.id)"
+            [title]="m.name ? m.name + ' (' + m.id + ')' : m.id">
+      <i class="fas fa-check mp-check"></i>
+      <span class="mp-id">{{ m.id }}</span>
+      <span class="mp-tag" *ngIf="m.unlisted" title="Not in the server's model list">not listed</span>
+      <span class="mp-tag warn" *ngIf="m.tools === false" title="The server says this model does not support tool calling, which the agent needs">no tools</span>
+      <span class="mp-ctx" *ngIf="m.contextLength" title="Context window">{{ formatContext(m.contextLength) }}</span>
+    </button>
+
+    <button *ngIf="customOption" type="button" class="mp-item custom" [class.active]="activeIndex === items.length"
+            (mousedown)="$event.preventDefault()" (mousemove)="hover(items.length)" (click)="pick(customOption)">
+      <i class="fas fa-pen mp-check"></i>
+      <span class="mp-id">Use “{{ customOption }}”</span>
+    </button>
+
+    <div class="mp-status" *ngIf="loading && !catalog.models.length">
+      <i class="fas fa-circle-notch fa-spin"></i> Loading models…
+    </div>
+    <div class="mp-status error" *ngIf="catalog.status === 'error'">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span class="mp-status-text">Could not load models: {{ catalog.error }}</span>
+      <button class="mp-link" type="button" (mousedown)="$event.preventDefault()" (click)="refresh()">Retry</button>
+    </div>
+    <div class="mp-status" *ngIf="catalog.status === 'unsupported' && !customOption">
+      This server does not list its models. Type the model id above.
+    </div>
+    <div class="mp-status" *ngIf="catalog.status === 'unconfigured' && !customOption">
+      Set an endpoint in the AI panel settings to list its models.
+    </div>
+    <div class="mp-status" *ngIf="catalog.status === 'ready' && !optionCount">
+      The server returned no models.
+    </div>
+  </div>
+
+  <div class="mp-footer" *ngIf="countLabel">{{ countLabel }}</div>
+</div>
