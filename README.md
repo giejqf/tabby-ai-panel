@@ -1,96 +1,68 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/assets/logo.svg" width="112" height="112" alt="Tabby AI Panel logo">
+
 # Tabby AI Panel
 
-An autonomous AI agent for [Tabby](https://tabby.sh) that can **see and operate every open terminal tab** — local shells and SSH sessions on different machines — and keeps **persistent, resumable sessions**.
+**An autonomous AI agent for the [Tabby](https://tabby.sh) terminal that works across all your tabs.**<br>
+Local shells and SSH sessions on different machines, with persistent sessions and commands you approve.
 
-Ask for something like *"set up a WireGuard tunnel between @Linux-1 and @Linux-2"* and the agent inspects both hosts, plans, runs the commands in the right tabs (with your approval), reads the results, fixes problems, and verifies the tunnel from both sides.
+<a href="https://www.npmjs.com/package/tabby-ai-panel"><img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/assets/badges/npm.svg" alt="npm version"></a>
+<a href="https://tabby.sh"><img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/assets/badges/tabby.svg" alt="Tabby plugin"></a>
+<a href="docs/getting-started.md#connect-a-model"><img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/assets/badges/api.svg" alt="Works with OpenAI-compatible APIs"></a>
+<a href="docs/development.md#unit-tests"><img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/assets/badges/tests.svg" alt="Unit tests"></a>
+<a href="LICENSE"><img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/assets/badges/license.svg" alt="MIT license"></a>
 
-![Tabby AI Panel running a command in a background tab](https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/screenshot.png)
+[Getting started](docs/getting-started.md) · [Documentation](docs/README.md) · [Changelog](CHANGELOG.md)
+
+</div>
+
+<br>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/giejqf/tabby-ai-panel/main/docs/screenshot.png" alt="The AI panel next to a terminal: the agent compared two hosts and is waiting for approval to run sudo apt-get update on Linux-1">
+</p>
+
+Ask for something like *"set up a WireGuard tunnel between @Linux-1 and @Linux-2"*. The agent inspects both hosts, makes a plan, runs commands in the right tabs, reads the results, fixes problems, and verifies the tunnel from both sides. You approve each step, or decide which kinds of steps it may take on its own.
 
 ## Features
 
-- **Cross-tab context** – every terminal tab (including split panes) is addressable by a stable key (`t1`, `t2`, …) or by its label. Mention one with `@name`. The agent runs commands in background tabs without stealing your focus.
-- **Persistent sessions** – every conversation is saved as a readable JSON file. Browse, search, rename, delete and **resume** sessions from the drawer. On resume, terminals are re-attached to matching open tabs; closed SSH hosts can be reconnected with one click.
-- **Reviewable execution** – each command shows the target terminal, a risk badge, an explanation and live output. Choose per session whether to approve everything, only medium/high risk, or run fully autonomously. Catastrophic patterns (`rm -rf /`, `mkfs`, `reboot`, firewall flush, …) always ask.
-- **Knows what the terminal is doing** – detects when the prompt is back, when a program is waiting for input (`[Y/n]`, passwords), when a full-screen app is open, and when a command is still running. Passwords are never typed by the agent.
-- **Any OpenAI-compatible endpoint** – OpenRouter, LiteLLM, llama.cpp, vLLM, Ollama, LM Studio… Streaming, tool calling, and reasoning tokens (shown collapsibly). Requests go through Node's HTTP stack, so self-hosted servers need no CORS setup.
-- **Native Tabby UI** – docked, resizable sidebar that follows your theme; toolbar button; configurable hotkeys; settings tab.
+- **Works across terminals.** Every tab and split pane gets a stable key (`t1`, `t2`, …). Commands go to exactly the terminal they are meant for, in the background, without taking over your screen.
+- **Understands what a terminal is doing.** It recognizes when the prompt is back, when a program waits for input (`[Y/n]`, passwords), when a full-screen app is open, and when a command is still running. It never types passwords.
+- **Commands you can review.** Each action shows the target terminal, a risk badge, an explanation and live output. Approve every step, or auto-approve low- or medium-risk ones. Destructive commands such as `rm -rf /`, `mkfs` or `reboot` always ask.
+- **Persistent sessions.** Conversations are saved as readable JSON. You can search, rename and resume them. On resume, terminals are re-attached to matching tabs, and closed SSH hosts reconnect with one click.
+- **Works with any OpenAI-compatible model.** OpenRouter, OpenAI, LiteLLM, Ollama, LM Studio, llama.cpp, vLLM… with streaming, tool calling and visible reasoning. Requests go through Node.js, so local servers need no CORS setup.
+- **Fits into Tabby.** A docked, resizable sidebar that follows your theme, a toolbar button, configurable hotkeys and a settings tab.
 
-## Install
+## Quick start
 
-**From Tabby** – Settings → Plugins → search for `ai-panel` → Get, then restart Tabby.
+1. **Install**: in Tabby, open **Settings → Plugins**, search for `ai-panel`, click **Get**, and restart Tabby.
+2. **Connect a model**: in **Settings → AI Panel**, enter your endpoint (for example `https://openrouter.ai/api` or `http://localhost:11434`) and API key, pick a model that supports tool calling, and click **Test**.
+3. **Ask**: open the panel with the **AI Agent** toolbar button or `Ctrl+Alt+A` (`⌘⇧A` on macOS), mention a terminal with `@`, and press `Enter`.
 
-**From the zip** (`npm run pack` → `release/tabby-ai-panel-<version>.zip`): unzip it inside Tabby's plugin folder so that you end up with `plugins/node_modules/tabby-ai-panel/package.json`:
+Other ways to install (zip, from source) and endpoint examples are in [Getting started](docs/getting-started.md).
 
-| OS | Plugin folder |
-|---|---|
-| Linux | `~/.config/tabby/plugins/node_modules/` |
-| macOS | `~/Library/Application Support/tabby/plugins/node_modules/` |
-| Windows | `%APPDATA%\tabby\plugins\node_modules\` |
+## Documentation
 
-```bash
-mkdir -p ~/.config/tabby/plugins/node_modules
-unzip tabby-ai-panel-0.1.3.zip -d ~/.config/tabby/plugins/node_modules
-```
-
-**From source** (development): `npm install && npm run build && npm run link:tabby` symlinks the checkout into the same folder.
-
-Restart Tabby, then open **Settings → AI Panel**, set your endpoint and API key, and pick a model from the list the server reports (or type any id). Use **Test** to verify the connection. You can switch models later from the model name under the composer. Open the panel with the **AI Agent** toolbar button or `Ctrl+Alt+A` (`⌘⇧A` on macOS).
-
-## Usage
-
-- Type a request. Mention terminals with `@` (autocomplete lists open tabs).
-- Commands appear as cards: **Approve** / **Deny**, or open the caret menu to approve and auto-approve low-risk actions for the rest of the session. Hotkeys: `Ctrl+Alt+Y` approve, `Ctrl+Alt+X` deny, `Ctrl+Alt+S` stop.
-- The chip bar shows the terminals in this session with a live status dot. Click a chip to jump to that tab, or to reconnect it if it was closed. Click a chip's **×** to take that terminal away from the agent for this session: it disappears from its listings and no tool can reach it (the tab itself stays open). Removed terminals are counted in a *hidden* chip, from which you can restore them.
-- `☰` opens the session drawer. Sessions are stored in `<Tabby config dir>/ai-panel/sessions/*.json`.
-- Code blocks in answers have **Copy** and **Insert** (types into the active terminal without pressing Enter).
-
-## Tools the agent has
-
-| Tool | Purpose |
-|---|---|
-| `list_terminals` | keys, labels, connection, status, last line of every tab |
-| `read_terminal` | last N lines of a tab's buffer |
-| `run_command` | type a command, wait for prompt / input request / timeout, return output |
-| `send_keys` | answer prompts, drive full-screen apps, `ctrl-c` |
-| `wait_for_output` | keep waiting on a long-running command (optionally until a regex matches) |
-| `ask_user` | ask a question in the panel (free text or choices) |
-| `open_terminal` | open a new tab from a saved Tabby profile |
-| `focus_terminal` | switch the user's view to a tab (e.g. to type a password) |
-
-## Development
-
-```bash
-npm run watch        # rebuild on change (TABBY_DEV=1 gives readable source maps)
-npm test             # unit tests for prompt detection, the command runner, the provider, context budgeting
-npm run typecheck
-```
-
-`scripts/e2e/` runs a real Tabby headlessly under Xvfb with the plugin loaded and drives it over the
-DevTools protocol against a scripted fake model — see [scripts/e2e/README.md](scripts/e2e/README.md).
-
-Project layout:
-
-```
-src/
-  core/                 framework-free logic (runner, registry, session store, agent loop, tools, LLM client)
-  ui/                   Angular components: panel, transcript, tool cards, composer, terminal strip, sessions, settings
-  prompts/system.md     the agent's instructions
-  types/                session schema + config
-tests/                  node:test suites (run with tsx)
-scripts/e2e/            headless Tabby end-to-end harness
-```
-
-### How it works
-
-- **Terminal registry** (`core/terminal-registry.service.ts`) – a `TerminalDecorator` registers every terminal tab; each gets a runtime id and a descriptor (profile, host, user, title) used to re-identify it after a restart. Reads go straight to the xterm buffer (wrapped rows are joined), writes go through `tab.sendInput`.
-- **Command runner** (`core/terminal-runner.ts`) – learns the prompt from the line under the cursor before typing, then watches buffer activity: prompt back + quiet → done; last line looks like a question/password → `awaiting_input`; alternate screen → `alt_screen`; silence → `idle`; time budget → `timeout`. Returns only the new output (echo and prompt stripped).
-- **Agent loop** (`core/agent.service.ts`) – streams the model, gates tool calls through the approval policy, executes tools, and persists after every step. Terminal keys (`t1`, `t2`) are session-scoped and bound to live tabs; on resume they are re-bound by descriptor similarity.
-- **Prompt builder** (`core/prompt-builder.ts`) – converts the stored transcript to OpenAI messages, truncates long tool output (head + tail) and elides old output first when over the context budget.
+| Guide | What's inside |
+| --- | --- |
+| [Getting started](docs/getting-started.md) | Install, connect a model, run a first task, troubleshoot |
+| [Using the panel](docs/usage.md) | Requests, approvals, terminal chips, sessions, keyboard shortcuts |
+| [Configuration](docs/configuration.md) | Every setting and default, request parameters, context budget |
+| [Sessions](docs/sessions.md) | Resume and re-attach, storage location, file format |
+| [Safety](docs/safety.md) | Risk assessment, what is sent to the model, what is stored |
+| [Agent tools](docs/agent-tools.md) | The tools the model can call and what their results mean |
+| [Architecture](docs/architecture.md) | How the plugin works inside |
+| [Development](docs/development.md) | Building, unit and end-to-end tests, releasing |
 
 ## Safety
 
-You are giving a language model the ability to type into your terminals. Review actions, keep "Ask for every action" on for machines that matter, and prefer self-hosted models for sensitive environments. The risk heuristics are a safety net, not a guarantee.
+You are giving a language model the ability to type into your terminals. Review its actions, keep **Ask for every action** on for machines that matter, and prefer a self-hosted model in sensitive environments. The risk checks are a safety net, not a guarantee. Read [Safety](docs/safety.md) for the details.
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started, and [SECURITY.md](SECURITY.md) to report vulnerabilities privately.
 
 ## License
 
-MIT
+[MIT](LICENSE) © Qianfan Jiang
